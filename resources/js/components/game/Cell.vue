@@ -23,7 +23,7 @@ export default {
     },
     computed: {
         imgDir: function() {
-            return './images/' + this.cell.value + '.svg'
+            return './images/' + this.cell.value.toLowerCase() + '.svg'
         }
     }
 }
