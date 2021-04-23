@@ -1,3 +1,5 @@
+Hosted version visible on: http://3.85.135.105/login
+
 <h1>Setup Instructions For Your Local Machine</h1>
 
 <h2>Requirements:</h3>

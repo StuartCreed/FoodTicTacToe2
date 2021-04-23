@@ -16649,7 +16649,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
     cellClickedOn: function cellClickedOn(cell, user) {
       this.$emit('cellClickedOn', cell, user);
       this.cells[cell].value = user;
-      this.checkBoard(); //TODO this.gameWon not updated
+      this.checkBoard();
 
       if (this.currentGo === 'Player' && !this.gameFinished) {
         this.takeComputerTurn();
@@ -16777,7 +16777,7 @@ __webpack_require__.r(__webpack_exports__);
   },
   computed: {
     imgDir: function imgDir() {
-      return './images/' + this.cell.value + '.svg';
+      return './images/' + this.cell.value.toLowerCase() + '.svg';
     }
   }
 });

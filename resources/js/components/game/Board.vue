@@ -39,7 +39,7 @@ export default {
             this.$emit('cellClickedOn', cell, user)
             this.cells[cell].value = user;
             this.checkBoard();
-            //TODO this.gameWon not updated
+
             if (this.currentGo === 'Player' && !this.gameFinished) {
                 this.takeComputerTurn()
             }
