@@ -151,9 +151,35 @@ foreach (range(1, 4) as $i) {
 }
 ```
 
+You may access the value of a named counter using the  `counterValue` function.
+
+```php
+foreach (range(1, 4) as $i) {
+    ray()->count('first');
+
+    if (ray()->counterValue('first') === 2) {
+        echo "counter value is two!";
+    }
+}
+```
+
 This is how that looks like in Ray.
 
 ![screenshot](/docs/ray/v1/images/named-count.png)
+
+### Limiting the number of sent payloads
+
+To limit the number of payloads sent by a particular `ray()` call, use the `limit` function.  It works well for debugging loops.
+
+```php
+foreach (range(1, 10) as $i) {
+    ray()->limit(3)->text("A #{$i}"); // counts to 3
+    ray()->limit(6)->text("B #{$i}"); // counts to 6
+    ray()->text("C #{$i}"); // counts to 10
+}
+```
+
+If the argument passed to `limit()` is a negative number or zero, limiting is disabled.
 
 ### Display the class name of an object
 
@@ -306,6 +332,15 @@ To render a piece of HTML directly in Ray, you can use the `html` method.
 
 ```php
 ray()->html('<b>Bold string<b>');
+```
+
+### Displaying text content
+
+To display raw text while preserving whitespace formatting, use the `text` method.  If the text contains HTML, it will be displayed as-is and is not rendered.
+
+```php
+ray()->text('<em>this string is html encoded</em>');
+ray()->text('  whitespace formatting' . PHP_EOL . '   is preserved as well.');
 ```
 
 ### Updating displayed items

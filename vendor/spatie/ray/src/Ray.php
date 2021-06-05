@@ -36,12 +36,15 @@ use Spatie\Ray\Payloads\RemovePayload;
 use Spatie\Ray\Payloads\ShowAppPayload;
 use Spatie\Ray\Payloads\SizePayload;
 use Spatie\Ray\Payloads\TablePayload;
+use Spatie\Ray\Payloads\TextPayload;
 use Spatie\Ray\Payloads\TracePayload;
 use Spatie\Ray\Payloads\XmlPayload;
 use Spatie\Ray\Settings\Settings;
 use Spatie\Ray\Settings\SettingsFactory;
 use Spatie\Ray\Support\Counters;
+use Spatie\Ray\Support\Limiters;
 use Symfony\Component\Stopwatch\Stopwatch;
+use Throwable;
 
 class Ray
 {
@@ -58,8 +61,14 @@ class Ray
     /** @var \Spatie\Ray\Support\Counters */
     public static $counters;
 
+    /** @var \Spatie\Ray\Support\Limiters */
+    public static $limiters;
+
     /** @var string */
     public static $fakeUuid;
+
+    /** @var \Spatie\Ray\Origin\Origin|null */
+    public $limitOrigin = null;
 
     /** @var string */
     public $uuid = '';
@@ -84,6 +93,8 @@ class Ray
         self::$client = $client ?? self::$client ?? new Client($settings->port, $settings->host);
 
         self::$counters = self::$counters ?? new Counters();
+
+        self::$limiters = self::$limiters ?? new Limiters();
 
         $this->uuid = $uuid ?? static::$fakeUuid ?? Uuid::uuid4()->toString();
 
@@ -414,6 +425,11 @@ class Ray
         return $this;
     }
 
+    public function counterValue(string $name): int
+    {
+        return self::$counters->get($name);
+    }
+
     public function pause(): self
     {
         $lockName = md5(time());
@@ -436,7 +452,7 @@ class Ray
         return $this->sendRequest($payload);
     }
 
-    public function exception(Exception $exception, array $meta = []): self
+    public function exception(Throwable $exception, array $meta = []): self
     {
         $payload = new ExceptionPayload($exception, $meta);
 
@@ -454,6 +470,13 @@ class Ray
         return $this->sendRequest($payload);
     }
 
+    public function text(string $text): self
+    {
+        $payload = new TextPayload($text);
+
+        return $this->sendRequest($payload);
+    }
+
     public function raw(...$arguments): self
     {
         if (! count($arguments)) {
@@ -465,6 +488,15 @@ class Ray
         }, $arguments);
 
         return $this->sendRequest($payloads);
+    }
+
+    public function limit(int $count): self
+    {
+        $this->limitOrigin = (new DefaultOriginFactory())->getOrigin();
+
+        self::$limiters->initialize($this->limitOrigin, $count);
+
+        return $this;
     }
 
     public function send(...$arguments): self
@@ -521,6 +553,14 @@ class Ray
     {
         if (! $this->enabled()) {
             return $this;
+        }
+
+        if (! empty($this->limitOrigin)) {
+            if (! self::$limiters->canSendPayload($this->limitOrigin)) {
+                return $this;
+            }
+
+            self::$limiters->increment($this->limitOrigin);
         }
 
         if (! is_array($payloads)) {
